@@ -1,0 +1,45 @@
+{
+  "name": "fluxaudio-api",
+  "version": "1.0.0",
+  "description": "High-performance serverless music streaming API and autoembed service with DES-ECB audio decryption and edge caching.",
+  "type": "module",
+  "main": "lib/saavn.js",
+  "author": "aksh120",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aksh120/FluxAudio-API.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aksh120/FluxAudio-API/issues"
+  },
+  "homepage": "https://github.com/aksh120/FluxAudio-API#readme",
+  "keywords": [
+    "music-api",
+    "audio-streaming",
+    "jiosaavn",
+    "autoembed",
+    "audio-player",
+    "des-ecb",
+    "crypto-js",
+    "vercel-serverless",
+    "media-decryption"
+  ],
+  "scripts": {
+    "dev": "node dev.js",
+    "start": "node dev.js",
+    "test": "node test.js",
+    "build": "vercel build",
+    "deploy": "vercel --prod",
+    "vercel-dev": "vercel dev"
+  },
+  "dependencies": {
+    "crypto-js": "^4.2.0"
+  },
+  "devDependencies": {
+    "vercel": "^37.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
