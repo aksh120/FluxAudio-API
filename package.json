@@ -29,15 +29,10 @@
     "dev": "node dev.js",
     "start": "node dev.js",
     "test": "node test.js",
-    "build": "vercel build",
-    "deploy": "vercel --prod",
-    "vercel-dev": "vercel dev"
+    "build": "echo 'Build complete'"
   },
   "dependencies": {
     "crypto-js": "^4.2.0"
-  },
-  "devDependencies": {
-    "vercel": "^37.0.0"
   },
   "engines": {
     "node": ">=18.0.0"
