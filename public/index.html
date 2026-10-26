@@ -806,6 +806,115 @@
       margin-bottom: 48px;
     }
 
+    .sandbox-header-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .sandbox-switcher {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .btn-sb {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-sb:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      border-color: var(--border-hover);
+    }
+
+    .btn-sb.active {
+      background: #ffffff;
+      color: #000000;
+      font-weight: 600;
+      border-color: #ffffff;
+    }
+
+    .btn-sb.active .source-dot.saavn {
+      background: #059669;
+    }
+
+    .btn-sb.active .source-dot.yt {
+      background: #dc2626;
+    }
+
+    .sandbox-section {
+      transition: opacity 0.2s ease;
+    }
+
+    .sandbox-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sandbox-section-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .sandbox-section-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .sandbox-section-meta {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
+    .catalog-badge {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 3px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .catalog-badge.saavn {
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .catalog-badge.yt {
+      color: #f87171;
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.25);
+    }
+
     .section-intro {
       margin-bottom: 20px;
     }
@@ -859,6 +968,12 @@
       border: 1px solid rgba(16, 185, 129, 0.2);
       padding: 2px 6px;
       border-radius: 4px;
+    }
+
+    .method-tag.yt {
+      color: #f87171;
+      background: rgba(248, 113, 113, 0.1);
+      border-color: rgba(248, 113, 113, 0.2);
     }
 
     .endpoint-title {
@@ -1232,124 +1347,262 @@
 
     <!-- Interactive API Sandbox -->
     <section class="sandbox-panel" id="sandbox">
-      <div class="section-intro">
-        <h2>Interactive API Sandbox</h2>
-        <p>Test live queries directly against all serverless endpoints</p>
+      <div class="sandbox-header-row">
+        <div class="section-intro" style="margin-bottom: 0;">
+          <h2>Interactive API Sandbox</h2>
+          <p>Test live queries directly against all serverless endpoints across both streaming architectures.</p>
+        </div>
+        <div class="sandbox-switcher">
+          <button class="btn-sb active" id="sbTabAll" onclick="switchSandboxTab('all', this)">All Catalogs</button>
+          <button class="btn-sb" id="sbTabSaavn" onclick="switchSandboxTab('saavn', this)">
+            <span class="source-dot saavn"></span>
+            JioSaavn (6)
+          </button>
+          <button class="btn-sb" id="sbTabYt" onclick="switchSandboxTab('youtube', this)">
+            <span class="source-dot yt"></span>
+            YouTube Music (6)
+          </button>
+        </div>
       </div>
 
-      <div class="api-grid">
-        <!-- Endpoint 1: Search -->
-        <div class="api-card">
-          <div>
-            <div class="api-card-top">
-              <span class="method-tag">GET</span>
-              <span class="endpoint-title">/api/search</span>
-            </div>
-            <p class="api-desc" style="margin-top: 6px;">Query JioSaavn &amp; YouTube Music catalogs with source filtering
-              and decrypted links.</p>
+      <!-- SECTION 1: JIOSAAVN SUITE -->
+      <div class="sandbox-section" id="sandboxSectionSaavn">
+        <div class="sandbox-section-header">
+          <div class="sandbox-section-title-wrap">
+            <span class="catalog-badge saavn">JioSaavn Suite</span>
+            <h3 class="sandbox-section-title">JioSaavn Serverless Endpoints</h3>
           </div>
-          <div>
-            <input type="text" class="api-param-input" id="paramSearch" value="q=Starboy&source=all&limit=4">
-          </div>
-          <div class="api-card-foot">
-            <span class="api-timing" id="timeSearch">Ready</span>
-            <button class="btn-test-api" onclick="executeApi('search', 'paramSearch', 'timeSearch')">Execute</button>
-          </div>
+          <span class="sandbox-section-meta">3DES-ECB Decryption &bull; 320kbps Bitrate Scaling &bull; CDN Direct</span>
         </div>
 
-        <!-- Endpoint 2: Song -->
-        <div class="api-card">
-          <div>
-            <div class="api-card-top">
-              <span class="method-tag">GET</span>
-              <span class="endpoint-title">/api/song</span>
+        <div class="api-grid">
+          <!-- JioSaavn Endpoint 1: Search -->
+          <div class="api-card">
+            <div>
+              <div class="api-card-top">
+                <span class="method-tag">GET</span>
+                <span class="endpoint-title">/api/search</span>
+              </div>
+              <p class="api-desc" style="margin-top: 6px;">Query JioSaavn songs, artists, albums, and playlists with media decryption.</p>
             </div>
-            <p class="api-desc" style="margin-top: 6px;">Inspect raw metadata, album, copyright, and all 5 bitrate
-              stream tiers.</p>
+            <div>
+              <input type="text" class="api-param-input" id="paramSaavnSearch" value="q=Starboy&source=saavn&limit=4">
+            </div>
+            <div class="api-card-foot">
+              <span class="api-timing" id="timeSaavnSearch">Ready</span>
+              <button class="btn-test-api" onclick="executeApi('search', 'paramSaavnSearch', 'timeSaavnSearch')">Execute</button>
+            </div>
           </div>
-          <div>
-            <input type="text" class="api-param-input" id="paramSong" value="id=3IoDK8qI">
+
+          <!-- JioSaavn Endpoint 2: Song -->
+          <div class="api-card">
+            <div>
+              <div class="api-card-top">
+                <span class="method-tag">GET</span>
+                <span class="endpoint-title">/api/song</span>
+              </div>
+              <p class="api-desc" style="margin-top: 6px;">Inspect raw metadata, album, copyright, and all 5 bitrate stream tiers.</p>
+            </div>
+            <div>
+              <input type="text" class="api-param-input" id="paramSaavnSong" value="id=3IoDK8qI">
+            </div>
+            <div class="api-card-foot">
+              <span class="api-timing" id="timeSaavnSong">Ready</span>
+              <button class="btn-test-api" onclick="executeApi('song', 'paramSaavnSong', 'timeSaavnSong')">Execute</button>
+            </div>
           </div>
-          <div class="api-card-foot">
-            <span class="api-timing" id="timeSong">Ready</span>
-            <button class="btn-test-api" onclick="executeApi('song', 'paramSong', 'timeSong')">Execute</button>
+
+          <!-- JioSaavn Endpoint 3: Album -->
+          <div class="api-card">
+            <div>
+              <div class="api-card-top">
+                <span class="method-tag">GET</span>
+                <span class="endpoint-title">/api/album</span>
+              </div>
+              <p class="api-desc" style="margin-top: 6px;">Fetch entire album tracklist with all tracks decrypted in one call.</p>
+            </div>
+            <div>
+              <input type="text" class="api-param-input" id="paramSaavnAlbum" value="id=25500145">
+            </div>
+            <div class="api-card-foot">
+              <span class="api-timing" id="timeSaavnAlbum">Ready</span>
+              <button class="btn-test-api" onclick="executeApi('album', 'paramSaavnAlbum', 'timeSaavnAlbum')">Execute</button>
+            </div>
+          </div>
+
+          <!-- JioSaavn Endpoint 4: Playlist -->
+          <div class="api-card">
+            <div>
+              <div class="api-card-top">
+                <span class="method-tag">GET</span>
+                <span class="endpoint-title">/api/playlist</span>
+              </div>
+              <p class="api-desc" style="margin-top: 6px;">Get playlist metadata, follower count, and complete decrypted songs.</p>
+            </div>
+            <div>
+              <input type="text" class="api-param-input" id="paramSaavnPlaylist" value="id=110858205">
+            </div>
+            <div class="api-card-foot">
+              <span class="api-timing" id="timeSaavnPlaylist">Ready</span>
+              <button class="btn-test-api" onclick="executeApi('playlist', 'paramSaavnPlaylist', 'timeSaavnPlaylist')">Execute</button>
+            </div>
+          </div>
+
+          <!-- JioSaavn Endpoint 5: Lyrics -->
+          <div class="api-card">
+            <div>
+              <div class="api-card-top">
+                <span class="method-tag">GET</span>
+                <span class="endpoint-title">/api/lyrics</span>
+              </div>
+              <p class="api-desc" style="margin-top: 6px;">Returns clean stripped plain-text lyrics and preview snippets.</p>
+            </div>
+            <div>
+              <input type="text" class="api-param-input" id="paramSaavnLyrics" value="id=aRZbUYD7">
+            </div>
+            <div class="api-card-foot">
+              <span class="api-timing" id="timeSaavnLyrics">Ready</span>
+              <button class="btn-test-api" onclick="executeApi('lyrics', 'paramSaavnLyrics', 'timeSaavnLyrics')">Execute</button>
+            </div>
+          </div>
+
+          <!-- JioSaavn Endpoint 6: Embed -->
+          <div class="api-card">
+            <div>
+              <div class="api-card-top">
+                <span class="method-tag">GET</span>
+                <span class="endpoint-title">/api/embed</span>
+              </div>
+              <p class="api-desc" style="margin-top: 6px;">HTML5 autoembed audio widget ready for external iframes.</p>
+            </div>
+            <div>
+              <input type="text" class="api-param-input" id="paramSaavnEmbed" value="id=3IoDK8qI">
+            </div>
+            <div class="api-card-foot">
+              <span class="api-timing">HTML View</span>
+              <button class="btn-test-api" onclick="window.open('/api/embed?' + document.getElementById('paramSaavnEmbed').value, '_blank')">Launch</button>
+            </div>
           </div>
         </div>
+      </div>
 
-        <!-- Endpoint 3: Album -->
-        <div class="api-card">
-          <div>
-            <div class="api-card-top">
-              <span class="method-tag">GET</span>
-              <span class="endpoint-title">/api/album</span>
-            </div>
-            <p class="api-desc" style="margin-top: 6px;">Fetch entire album tracklist with all tracks decrypted in one
-              call.</p>
+      <!-- SECTION 2: YOUTUBE MUSIC SUITE -->
+      <div class="sandbox-section" id="sandboxSectionYoutube" style="margin-top: 36px;">
+        <div class="sandbox-section-header">
+          <div class="sandbox-section-title-wrap">
+            <span class="catalog-badge yt">YouTube Music Suite</span>
+            <h3 class="sandbox-section-title">YouTube Music Serverless Endpoints</h3>
           </div>
-          <div>
-            <input type="text" class="api-param-input" id="paramAlbum" value="id=25500145">
-          </div>
-          <div class="api-card-foot">
-            <span class="api-timing" id="timeAlbum">Ready</span>
-            <button class="btn-test-api" onclick="executeApi('album', 'paramAlbum', 'timeAlbum')">Execute</button>
-          </div>
+          <span class="sandbox-section-meta">InnerTube Protocol &bull; 544x544 Artwork &bull; Synced Lyrics &amp; Embeds</span>
         </div>
 
-        <!-- Endpoint 4: Playlist -->
-        <div class="api-card">
-          <div>
-            <div class="api-card-top">
-              <span class="method-tag">GET</span>
-              <span class="endpoint-title">/api/playlist</span>
+        <div class="api-grid">
+          <!-- YouTube Music Endpoint 1: Search -->
+          <div class="api-card">
+            <div>
+              <div class="api-card-top">
+                <span class="method-tag yt">GET</span>
+                <span class="endpoint-title">/api/search</span>
+              </div>
+              <p class="api-desc" style="margin-top: 6px;">Search YouTube Music tracks directly with verified videoId and thumbnails.</p>
             </div>
-            <p class="api-desc" style="margin-top: 6px;">Get playlist metadata, follower count, and complete decrypted
-              songs.</p>
+            <div>
+              <input type="text" class="api-param-input" id="paramYtSearch" value="q=Starboy&source=youtube&limit=4">
+            </div>
+            <div class="api-card-foot">
+              <span class="api-timing" id="timeYtSearch">Ready</span>
+              <button class="btn-test-api" onclick="executeApi('search', 'paramYtSearch', 'timeYtSearch')">Execute</button>
+            </div>
           </div>
-          <div>
-            <input type="text" class="api-param-input" id="paramPlaylist" value="id=110858205">
-          </div>
-          <div class="api-card-foot">
-            <span class="api-timing" id="timePlaylist">Ready</span>
-            <button class="btn-test-api"
-              onclick="executeApi('playlist', 'paramPlaylist', 'timePlaylist')">Execute</button>
-          </div>
-        </div>
 
-        <!-- Endpoint 5: Lyrics -->
-        <div class="api-card">
-          <div>
-            <div class="api-card-top">
-              <span class="method-tag">GET</span>
-              <span class="endpoint-title">/api/lyrics</span>
+          <!-- YouTube Music Endpoint 2: Song -->
+          <div class="api-card">
+            <div>
+              <div class="api-card-top">
+                <span class="method-tag yt">GET</span>
+                <span class="endpoint-title">/api/song</span>
+              </div>
+              <p class="api-desc" style="margin-top: 6px;">Inspect track metadata, artist, album browse ID, and stream URLs.</p>
             </div>
-            <p class="api-desc" style="margin-top: 6px;">Returns clean stripped plain-text lyrics and preview snippets.
-            </p>
+            <div>
+              <input type="text" class="api-param-input" id="paramYtSong" value="id=yt:3_g2un5M350">
+            </div>
+            <div class="api-card-foot">
+              <span class="api-timing" id="timeYtSong">Ready</span>
+              <button class="btn-test-api" onclick="executeApi('song', 'paramYtSong', 'timeYtSong')">Execute</button>
+            </div>
           </div>
-          <div>
-            <input type="text" class="api-param-input" id="paramLyrics" value="id=3IoDK8qI">
-          </div>
-          <div class="api-card-foot">
-            <span class="api-timing" id="timeLyrics">Ready</span>
-            <button class="btn-test-api" onclick="executeApi('lyrics', 'paramLyrics', 'timeLyrics')">Execute</button>
-          </div>
-        </div>
 
-        <!-- Endpoint 6: Embed -->
-        <div class="api-card">
-          <div>
-            <div class="api-card-top">
-              <span class="method-tag">GET</span>
-              <span class="endpoint-title">/api/embed</span>
+          <!-- YouTube Music Endpoint 3: Album -->
+          <div class="api-card">
+            <div>
+              <div class="api-card-top">
+                <span class="method-tag yt">GET</span>
+                <span class="endpoint-title">/api/album</span>
+              </div>
+              <p class="api-desc" style="margin-top: 6px;">Fetch complete album tracklist, or auto-resolve album from song ID.</p>
             </div>
-            <p class="api-desc" style="margin-top: 6px;">HTML5 autoembed audio widget ready for external iframes.</p>
+            <div>
+              <input type="text" class="api-param-input" id="paramYtAlbum" value="id=yt:MPREb_FWIMEPTHFsY">
+            </div>
+            <div class="api-card-foot">
+              <span class="api-timing" id="timeYtAlbum">Ready</span>
+              <button class="btn-test-api" onclick="executeApi('album', 'paramYtAlbum', 'timeYtAlbum')">Execute</button>
+            </div>
           </div>
-          <div>
-            <input type="text" class="api-param-input" id="paramEmbed" value="q=Shape%20of%20You">
+
+          <!-- YouTube Music Endpoint 4: Playlist -->
+          <div class="api-card">
+            <div>
+              <div class="api-card-top">
+                <span class="method-tag yt">GET</span>
+                <span class="endpoint-title">/api/playlist</span>
+              </div>
+              <p class="api-desc" style="margin-top: 6px;">Query YouTube Music public playlists (VL/PL) with complete track sequences.</p>
+            </div>
+            <div>
+              <input type="text" class="api-param-input" id="paramYtPlaylist" value="id=yt:VLPLplXQ2cg9B_qrCVd1J_iId5SvP8Kf_BfS">
+            </div>
+            <div class="api-card-foot">
+              <span class="api-timing" id="timeYtPlaylist">Ready</span>
+              <button class="btn-test-api" onclick="executeApi('playlist', 'paramYtPlaylist', 'timeYtPlaylist')">Execute</button>
+            </div>
           </div>
-          <div class="api-card-foot">
-            <span class="api-timing">HTML View</span>
-            <button class="btn-test-api"
-              onclick="window.open('/api/embed?' + document.getElementById('paramEmbed').value, '_blank')">Launch</button>
+
+          <!-- YouTube Music Endpoint 5: Lyrics -->
+          <div class="api-card">
+            <div>
+              <div class="api-card-top">
+                <span class="method-tag yt">GET</span>
+                <span class="endpoint-title">/api/lyrics</span>
+              </div>
+              <p class="api-desc" style="margin-top: 6px;">Fetch official InnerTube lyrics sheets and preview snippets.</p>
+            </div>
+            <div>
+              <input type="text" class="api-param-input" id="paramYtLyrics" value="id=yt:3_g2un5M350">
+            </div>
+            <div class="api-card-foot">
+              <span class="api-timing" id="timeYtLyrics">Ready</span>
+              <button class="btn-test-api" onclick="executeApi('lyrics', 'paramYtLyrics', 'timeYtLyrics')">Execute</button>
+            </div>
+          </div>
+
+          <!-- YouTube Music Endpoint 6: Embed -->
+          <div class="api-card">
+            <div>
+              <div class="api-card-top">
+                <span class="method-tag yt">GET</span>
+                <span class="endpoint-title">/api/embed</span>
+              </div>
+              <p class="api-desc" style="margin-top: 6px;">Direct HTML5 embed player powered by YouTube IFrame API.</p>
+            </div>
+            <div>
+              <input type="text" class="api-param-input" id="paramYtEmbed" value="id=yt:3_g2un5M350">
+            </div>
+            <div class="api-card-foot">
+              <span class="api-timing">HTML View</span>
+              <button class="btn-test-api" onclick="window.open('/api/embed?' + document.getElementById('paramYtEmbed').value, '_blank')">Launch</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1593,11 +1846,29 @@
       }
     }
 
+    function switchSandboxTab(tab, btn) {
+      document.querySelectorAll('.btn-sb').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const saavnSec = document.getElementById('sandboxSectionSaavn');
+      const ytSec = document.getElementById('sandboxSectionYoutube');
+      if (tab === 'all') {
+        saavnSec.style.display = 'block';
+        ytSec.style.display = 'block';
+      } else if (tab === 'saavn') {
+        saavnSec.style.display = 'block';
+        ytSec.style.display = 'none';
+      } else if (tab === 'youtube') {
+        saavnSec.style.display = 'none';
+        ytSec.style.display = 'block';
+      }
+    }
+
     async function executeApi(endpoint, paramInputId, timeId) {
       const paramVal = document.getElementById(paramInputId).value.trim();
       const timeEl = document.getElementById(timeId);
       const start = performance.now();
       timeEl.textContent = 'Calling...';
+      timeEl.style.color = 'var(--text-dim)';
 
       openModal(`GET /api/${endpoint}?${paramVal}`, 'Executing request...');
 
@@ -1605,10 +1876,17 @@
         const res = await fetch(`${API_BASE}/api/${endpoint}?${paramVal}`);
         const data = await res.json();
         const duration = Math.round(performance.now() - start);
-        timeEl.textContent = `${res.status} OK • ${duration}ms`;
+        if (res.ok) {
+          timeEl.textContent = `${res.status} OK • ${duration}ms`;
+          timeEl.style.color = '#10b981';
+        } else {
+          timeEl.textContent = `${res.status} Err • ${duration}ms`;
+          timeEl.style.color = '#f87171';
+        }
         modalContent.textContent = JSON.stringify(data, null, 2);
       } catch (err) {
         timeEl.textContent = 'Error';
+        timeEl.style.color = '#f87171';
         modalContent.textContent = `Error: ${err.message}`;
       }
     }
