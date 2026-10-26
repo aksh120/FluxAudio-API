@@ -12,17 +12,41 @@ import {
   sendJSON,
   handleCORS,
 } from "../lib/saavn.js";
+import { getYouTubeAlbum } from "../lib/ytmusic.js";
 
 export default async function handler(req, res) {
   if (handleCORS(req, res)) return;
 
   try {
-    const { id } = req.query || {};
+    const { id, source } = req.query || {};
 
     if (!id) {
       return sendJSON(res, 400, {
         status: "error",
         message: "Missing required parameter: id (album ID)",
+      });
+    }
+
+    const isYouTube =
+      source === "youtube" ||
+      (typeof id === "string" &&
+        (id.startsWith("yt:") ||
+          id.startsWith("MPREb_") ||
+          id.startsWith("OLAK5uy_") ||
+          id.includes("youtube.com") ||
+          id.includes("youtu.be")));
+
+    if (isYouTube) {
+      const album = await getYouTubeAlbum(id);
+      if (!album) {
+        return sendJSON(res, 404, {
+          status: "error",
+          message: "Album not found",
+        });
+      }
+      return sendJSON(res, 200, {
+        status: "ok",
+        album,
       });
     }
 

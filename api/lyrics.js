@@ -12,18 +12,34 @@ import {
   sendJSON,
   handleCORS,
 } from "../lib/saavn.js";
+import { getYouTubeLyrics } from "../lib/ytmusic.js";
 
 export default async function handler(req, res) {
   if (handleCORS(req, res)) return;
 
   try {
-    const { id } = req.query || {};
+    const { id, source } = req.query || {};
 
     if (!id) {
       return sendJSON(res, 400, {
         status: "error",
         message: "Missing required parameter: id (song ID)",
       });
+    }
+
+    const isYouTube =
+      source === "youtube" ||
+      (typeof id === "string" && (id.startsWith("yt:") || id.includes("youtube.com") || id.includes("youtu.be")));
+
+    if (isYouTube) {
+      const result = await getYouTubeLyrics(id);
+      if (!result) {
+        return sendJSON(res, 404, {
+          status: "error",
+          message: "Lyrics not found for this song",
+        });
+      }
+      return sendJSON(res, 200, result);
     }
 
     const data = await fetchFromSaavn({
