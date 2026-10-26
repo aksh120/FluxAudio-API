@@ -1,6 +1,6 @@
 # FluxAudio API
 
-High-performance, serverless music streaming API and autoembed player engine powered by JioSaavn CDN endpoints.
+High-performance, serverless music streaming API and autoembed player engine powered by JioSaavn and YouTube Music endpoints.
 
 [![Node Version](https://img.shields.io/badge/node-%3E%3D18.0.0-090a0f?style=flat-square&logo=node.js)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-MIT-090a0f?style=flat-square)](LICENSE)
@@ -8,7 +8,7 @@ High-performance, serverless music streaming API and autoembed player engine pow
 [![CORS](https://img.shields.io/badge/CORS-enabled-090a0f?style=flat-square)](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
 [![Audio Quality](https://img.shields.io/badge/bitrate-320kbps%20AAC-090a0f?style=flat-square)](https://github.com/aksh120/FluxAudio-API)
 
-FluxAudio API is a production-grade, zero-cold-start media backend designed for developers building music players, discovery tools, and web applications. It directly queries upstream CDN endpoints, performs in-memory DES-ECB audio URL decryption, and serves both clean JSON metadata and drop-in HTML5 iframe embed widgets.
+FluxAudio API is a production-grade, zero-cold-start media backend designed for developers building music players, discovery tools, and web applications. It directly queries upstream CDN and InnerTube endpoints, performs in-memory DES-ECB audio URL decryption, searches across both JioSaavn and YouTube Music, and serves both clean JSON metadata and drop-in HTML5 autoembed widgets.
 
 ---
 
@@ -22,13 +22,14 @@ Deploy your own private, high-speed instance to Vercel in seconds:
 
 ## Key Features
 
+- **Dual-Engine Search**: Query both JioSaavn and YouTube Music catalogs concurrently with automatic interleaving or target specific sources via `source=all`, `source=saavn`, or `source=youtube`.
 - **OpenSSL 3 Immune Decryption**: Uses pure-JavaScript `crypto-js` DES-ECB deciphering, avoiding Node 18+ and OpenSSL 3 `ERR_OSSL_EVP_UNSUPPORTED` runtime crashes on serverless environments.
 - **Bot-Filter Bypass**: Upstream requests automatically inject valid browser headers and User-Agent signatures to prevent rate-limiting or automated request blocks.
 - **5-Tier Bitrate Scaling**: Derives `320kbps`, `160kbps`, `96kbps`, `48kbps`, and `12kbps` direct MP4/AAC stream URLs from decrypted CDN tokens.
-- **Artwork Upscaling**: Automatically transforms low-resolution thumbnail URLs (`50x50`, `150x150`) into high-resolution `500x500` album art.
+- **Artwork Upscaling**: Automatically transforms low-resolution thumbnail URLs into high-resolution `500x500` and `544x544` album art.
 - **Universal Permissive CORS**: All API routes send `Access-Control-Allow-Origin: *` headers, allowing client-side single-page applications (React, Vue, Svelte, vanilla JS) to query without proxy errors.
 - **Edge Cache Optimization**: Configured with `Cache-Control: public, s-maxage=300, stale-while-revalidate=600` via Vercel Edge CDN for sub-100ms response times.
-- **Studio Autoembed Widget**: Provides an iframe-ready HTML5 audio widget inspired by Apple Music and Teenage Engineering hardware design.
+- **Unified Autoembed Studio**: Provides an iframe-ready HTML5 audio widget supporting both JioSaavn AAC streams and YouTube Music playback with identical hardware-inspired UI controls.
 
 ---
 
@@ -76,12 +77,12 @@ npm test
 
 | Method | Endpoint | Parameters | Description |
 |---|---|---|---|
-| `GET` | `/api/search` | `q` (required), `page`, `limit` | Searches tracks across Hollywood and Bollywood catalogs |
-| `GET` | `/api/song` | `id` or `url` (required) | Returns song metadata, labels, and all 5 decrypted bitrates |
+| `GET` | `/api/search` | `q` (required), `source`, `page`, `limit` | Searches tracks across JioSaavn and YouTube Music catalogs |
+| `GET` | `/api/song` | `id` or `url` (required) | Returns song metadata, labels, and stream URLs (supports JioSaavn & YouTube IDs) |
 | `GET` | `/api/album` | `id` (required) | Returns album info and all decrypted album tracks |
 | `GET` | `/api/playlist` | `id` (required) | Returns playlist metadata, fan count, and tracklist |
 | `GET` | `/api/lyrics` | `id` (required) | Returns sanitized plain-text lyrics and preview snippet |
-| `GET` | `/api/embed` | `id` or `q` (required) | Generates responsive HTML5 autoembed audio widget |
+| `GET` | `/api/embed` | `id` or `q` (required) | Generates responsive HTML5 autoembed audio widget (supports JioSaavn & YouTube) |
 
 ---
 
@@ -89,25 +90,32 @@ npm test
 
 #### 1. Search Songs
 ```http
-GET /api/search?q={query}&page={page}&limit={limit}
+GET /api/search?q={query}&source={source}&page={page}&limit={limit}
 ```
 
 **Parameters:**
 - `q` (*string*, required): Search term (e.g. song name, artist, album).
-- `page` (*integer*, optional, default: `1`): Pagination page number.
-- `limit` (*integer*, optional, default: `20`): Number of results per page.
+- `source` (*string*, optional, default: `all`): Catalog source filter: `all`, `saavn`, or `youtube`.
+- `page` (*integer*, optional, default: `1`): Pagination page number (applies to JioSaavn).
+- `limit` (*integer*, optional, default: `20`): Number of results per page (max `50`).
 
 **Example Response:**
 ```json
 {
   "status": "ok",
   "query": "Starboy",
+  "source": "all",
   "page": 1,
   "limit": 20,
-  "total_results": 1,
+  "total_results": 2,
+  "counts": {
+    "saavn": 1,
+    "youtube": 1
+  },
   "results": [
     {
       "id": "e_z0Z0l8",
+      "source": "saavn",
       "title": "Starboy",
       "album": "Starboy",
       "album_id": "1827492",
@@ -128,6 +136,25 @@ GET /api/search?q={query}&page={page}&limit={limit}
         "12kbps": "https://aac.saavncdn.com/123/e_z0Z0l8_12.mp4"
       },
       "stream_url": "https://aac.saavncdn.com/123/e_z0Z0l8_320.mp4"
+    },
+    {
+      "id": "yt:3_g2un5M350",
+      "youtube_id": "3_g2un5M350",
+      "source": "youtube",
+      "title": "Starboy (feat. Daft Punk)",
+      "album": "Starboy",
+      "album_id": "",
+      "artists": "The Weeknd, Daft Punk",
+      "featured_artists": "",
+      "artist_id": null,
+      "image": "https://lh3.googleusercontent.com/...=w544-h544-l90-rj",
+      "year": "2016",
+      "duration": 230,
+      "language": "unknown",
+      "label": "YouTube Music",
+      "url": "https://music.youtube.com/watch?v=3_g2un5M350",
+      "youtube_url": "https://www.youtube.com/watch?v=3_g2un5M350",
+      "stream_url": "https://www.youtube.com/watch?v=3_g2un5M350"
     }
   ]
 }
@@ -142,8 +169,8 @@ GET /api/song?url={perma_url}
 ```
 
 **Parameters:**
-- `id` (*string*): Upstream track identifier (e.g. `3IoDK8qI`).
-- `url` (*string*): Alternatively, a full JioSaavn permalink URL.
+- `id` (*string*): Upstream track identifier (e.g. JioSaavn ID `3IoDK8qI` or YouTube ID `yt:4NRXx6U8ABQ`).
+- `url` (*string*): Alternatively, a full JioSaavn or YouTube permalink URL.
 
 ---
 
@@ -254,7 +281,8 @@ FluxAudio-API/
 │   ├── lyrics.js          # Sanitized lyrics endpoint
 │   └── embed.js           # Minimalist HTML5 autoembed player
 ├── lib/
-│   └── saavn.js           # Core fetch, DES-ECB decryption, formatters
+│   ├── saavn.js           # Core fetch, DES-ECB decryption, formatters
+│   └── ytmusic.js         # YouTube Music InnerTube search & metadata
 ├── public/
 │   └── index.html         # Developer dashboard & embed studio
 ├── test.js                # Core cryptographic test runner
