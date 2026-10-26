@@ -12,6 +12,11 @@ import {
   upscaleImage,
   formatSong,
 } from "./lib/saavn.js";
+import {
+  parseDurationToSeconds,
+  upscaleYouTubeImage,
+  formatYouTubeSong,
+} from "./lib/ytmusic.js";
 
 let passed = 0;
 let failed = 0;
@@ -60,7 +65,7 @@ assert("generateDownloadLinks", "generates 48kbps target", links["48kbps"] === "
 assert("generateDownloadLinks", "generates 12kbps target", links["12kbps"] === "https://aac.saavncdn.com/123/song_12.mp4");
 assert("generateDownloadLinks", "returns empty object on empty string", Object.keys(generateDownloadLinks("")).length === 0);
 
-// ── formatSong ──────────────────────────────────────────────────────
+// ── formatSong (JioSaavn) ───────────────────────────────────────────
 const mockRaw = {
   id: "abc123",
   song: "Test &amp; Song",
@@ -83,6 +88,7 @@ const mockRaw = {
 };
 
 const formatted = formatSong(mockRaw);
+assert("formatSong", "marks source as saavn", formatted.source === "saavn");
 assert("formatSong", "sanitizes song title", formatted.title === "Test & Song");
 assert("formatSong", "sanitizes album title", formatted.album === 'Test "Album"');
 assert("formatSong", "sanitizes artist names", formatted.artists === "Artist's Name");
@@ -90,6 +96,89 @@ assert("formatSong", "upscales artwork to 500x500", formatted.image.includes("50
 assert("formatSong", "converts duration to integer", formatted.duration === 240);
 assert("formatSong", "parses boolean has_lyrics", formatted.has_lyrics === true);
 assert("formatSong", "parses integer play_count", formatted.play_count === 1000000);
+
+// ── parseDurationToSeconds (YouTube Music) ──────────────────────────
+assert("parseDurationToSeconds", "parses mm:ss", parseDurationToSeconds("3:45") === 225);
+assert("parseDurationToSeconds", "parses hh:mm:ss", parseDurationToSeconds("1:02:15") === 3735);
+assert("parseDurationToSeconds", "handles empty/invalid string", parseDurationToSeconds("") === 0);
+assert("parseDurationToSeconds", "handles null/undefined", parseDurationToSeconds(null) === 0);
+
+// ── upscaleYouTubeImage ─────────────────────────────────────────────
+const ytThumb = "https://lh3.googleusercontent.com/test=w120-h120-l90-rj";
+assert("upscaleYouTubeImage", "replaces resolution with 544x544", upscaleYouTubeImage(ytThumb) === "https://lh3.googleusercontent.com/test=w544-h544-l90-rj");
+assert("upscaleYouTubeImage", "handles empty string", upscaleYouTubeImage("") === "");
+
+// ── formatYouTubeSong ───────────────────────────────────────────────
+assert("formatYouTubeSong", "returns null for empty input", formatYouTubeSong(null) === null);
+const mockYTRaw = {
+  musicResponsiveListItemRenderer: {
+    thumbnail: {
+      musicThumbnailRenderer: {
+        thumbnail: {
+          thumbnails: [{ url: "https://lh3.googleusercontent.com/test=w120-h120-l90-rj" }],
+        },
+      },
+    },
+    flexColumns: [
+      {
+        musicResponsiveListItemFlexColumnRenderer: {
+          text: {
+            runs: [
+              {
+                text: "Blinding Lights",
+                navigationEndpoint: {
+                  watchEndpoint: { videoId: "4NRXx6U8ABQ" },
+                },
+              },
+            ],
+          },
+        },
+      },
+      {
+        musicResponsiveListItemFlexColumnRenderer: {
+          text: {
+            runs: [
+              {
+                text: "The Weeknd",
+                navigationEndpoint: {
+                  browseEndpoint: {
+                    browseEndpointContextSupportedConfigs: {
+                      browseEndpointContextMusicConfig: { pageType: "MUSIC_PAGE_TYPE_ARTIST" },
+                    },
+                    browseId: "UC0WP5P-ufpRfjbNrmOWwLBQ",
+                  },
+                },
+              },
+              { text: " • " },
+              {
+                text: "After Hours",
+                navigationEndpoint: {
+                  browseEndpoint: {
+                    browseEndpointContextSupportedConfigs: {
+                      browseEndpointContextMusicConfig: { pageType: "MUSIC_PAGE_TYPE_ALBUM" },
+                    },
+                  },
+                },
+              },
+              { text: " • " },
+              { text: "3:20" },
+            ],
+          },
+        },
+      },
+    ],
+  },
+};
+
+const formattedYT = formatYouTubeSong(mockYTRaw);
+assert("formatYouTubeSong", "formats yt: prefixed ID", formattedYT.id === "yt:4NRXx6U8ABQ");
+assert("formatYouTubeSong", "stores clean youtube_id", formattedYT.youtube_id === "4NRXx6U8ABQ");
+assert("formatYouTubeSong", "marks source as youtube", formattedYT.source === "youtube");
+assert("formatYouTubeSong", "extracts title", formattedYT.title === "Blinding Lights");
+assert("formatYouTubeSong", "extracts artist", formattedYT.artists === "The Weeknd");
+assert("formatYouTubeSong", "extracts album", formattedYT.album === "After Hours");
+assert("formatYouTubeSong", "computes duration in seconds", formattedYT.duration === 200);
+assert("formatYouTubeSong", "generates music youtube URL", formattedYT.url === "https://music.youtube.com/watch?v=4NRXx6U8ABQ");
 
 console.log(`\nTest Suites: 1 passed, 1 total`);
 console.log(`Tests:       ${passed} passed, ${failed} failed`);
