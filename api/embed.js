@@ -624,8 +624,9 @@ function buildMinimalPlayerHTML(song) {
 </div>
 
 ${isYouTube ? `
-<div id="ytPlayerHost" style="position:fixed;width:1px;height:1px;left:-9999px;top:-9999px;opacity:0;pointer-events:none;"></div>
-<script src="https://www.youtube.com/iframe_api"></script>
+<div id="ytPlayerContainer" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;opacity:0.001;pointer-events:none;overflow:hidden;">
+  <div id="ytPlayerHost"></div>
+</div>
 ` : `
 <audio id="playerAudio" preload="metadata" crossorigin="anonymous" src="${escHTML(streamUrl)}"></audio>
 `}
@@ -679,63 +680,118 @@ ${isYouTube ? `
     let pendingPlay = false;
     let ytPoll = null;
 
-    window.onYouTubeIframeAPIReady = function() {
-      ytPlayer = new YT.Player('ytPlayerHost', {
-        height: '1',
-        width: '1',
-        videoId: '${escHTML(ytVideoId)}',
-        playerVars: {
-          autoplay: 0,
-          controls: 0,
-          disablekb: 1,
-          fs: 0,
-          modestbranding: 1,
-          rel: 0,
-          playsinline: 1
-        },
-        events: {
-          onReady: function() {
-            ytReady = true;
-            ytPlayer.setVolume(Math.round(currentVol * 100));
-            const d = ytPlayer.getDuration() || totalDurationSec;
-            if (d) timeTotal.textContent = fmt(d);
-            if (pendingPlay) {
-              ytPlayer.playVideo();
-            }
+    function initYouTubePlayer() {
+      if (ytPlayer || !window.YT || !window.YT.Player) return;
+      try {
+        ytPlayer = new YT.Player('ytPlayerHost', {
+          height: '100%',
+          width: '100%',
+          videoId: '${escHTML(ytVideoId)}',
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            disablekb: 1,
+            fs: 0,
+            modestbranding: 1,
+            rel: 0,
+            playsinline: 1,
+            enablejsapi: 1,
+            origin: window.location.origin
           },
-          onStateChange: function(e) {
-            if (e.data === 1) { // PLAYING
-              ytPlaying = true;
-              setPlaying(true);
-              startPoll();
-            } else if (e.data === 2) { // PAUSED
+          events: {
+            onReady: function() {
+              ytReady = true;
+              try {
+                ytPlayer.setVolume(Math.round(currentVol * 100));
+                const d = ytPlayer.getDuration() || totalDurationSec;
+                if (d) timeTotal.textContent = fmt(d);
+              } catch (err) {}
+              if (pendingPlay) {
+                pendingPlay = false;
+                startYouTubePlayback();
+              }
+            },
+            onStateChange: function(e) {
+              if (e.data === 1) { // PLAYING
+                ytPlaying = true;
+                setPlaying(true);
+                startPoll();
+              } else if (e.data === 2) { // PAUSED
+                ytPlaying = false;
+                setPlaying(false);
+                stopPoll();
+              } else if (e.data === 0) { // ENDED
+                ytPlaying = false;
+                setPlaying(false);
+                stopPoll();
+                scrubProgress.style.width = '0%';
+                timeCurrent.textContent = '0:00';
+              }
+            },
+            onError: function() {
               ytPlaying = false;
               setPlaying(false);
               stopPoll();
-            } else if (e.data === 0) { // ENDED
-              ytPlaying = false;
-              setPlaying(false);
-              stopPoll();
-              scrubProgress.style.width = '0%';
-              timeCurrent.textContent = '0:00';
+              const tag = document.querySelector('.quality-tag');
+              if (tag) {
+                tag.textContent = 'UNPLAYABLE';
+                tag.style.color = '#ef4444';
+              }
             }
           }
-        }
-      });
+        });
+      } catch (err) {
+        console.error('Failed to initialize YT.Player:', err);
+      }
+    }
+
+    function startYouTubePlayback() {
+      if (!ytPlayer || !ytReady) return;
+      try {
+        if (typeof ytPlayer.unMute === 'function') ytPlayer.unMute();
+        ytPlayer.playVideo();
+        ytPlaying = true;
+        setPlaying(true);
+        startPoll();
+      } catch (err) {
+        console.error('Error playing YouTube video:', err);
+      }
+    }
+
+    window.onYouTubeIframeAPIReady = function() {
+      initYouTubePlayer();
     };
+
+    if (window.YT && window.YT.Player) {
+      initYouTubePlayer();
+    } else if (window.YT && window.YT.ready) {
+      window.YT.ready(initYouTubePlayer);
+    } else {
+      const tag = document.createElement('script');
+      tag.id = 'ytIframeApiScript';
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const first = document.getElementsByTagName('script')[0];
+      if (first && first.parentNode) {
+        first.parentNode.insertBefore(tag, first);
+      } else {
+        document.head.appendChild(tag);
+      }
+    }
 
     function startPoll() {
       stopPoll();
       ytPoll = setInterval(() => {
         if (!ytPlayer || !ytReady || isSeeking) return;
-        const cur = ytPlayer.getCurrentTime() || 0;
-        const dur = ytPlayer.getDuration() || totalDurationSec || 1;
-        if (dur > 0) {
-          const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
-          scrubProgress.style.width = pct + '%';
-          timeCurrent.textContent = fmt(cur);
-          if (dur) timeTotal.textContent = fmt(dur);
-        }
+        try {
+          const cur = ytPlayer.getCurrentTime() || 0;
+          const dur = ytPlayer.getDuration() || totalDurationSec || 1;
+          if (dur > 0) {
+            const pct = Math.min(100, Math.max(0, (cur / dur) * 100));
+            scrubProgress.style.width = pct + '%';
+            timeCurrent.textContent = fmt(cur);
+            if (dur) timeTotal.textContent = fmt(dur);
+          }
+        } catch (err) {}
       }, 250);
     }
 
@@ -748,14 +804,18 @@ ${isYouTube ? `
 
     btnPlay.addEventListener('click', () => {
       if (ytPlaying) {
-        if (ytPlayer && ytReady) ytPlayer.pauseVideo();
+        if (ytPlayer && ytReady && typeof ytPlayer.pauseVideo === 'function') {
+          ytPlayer.pauseVideo();
+        }
+        ytPlaying = false;
         setPlaying(false);
       } else {
         if (ytPlayer && ytReady) {
-          ytPlayer.playVideo();
+          startYouTubePlayback();
         } else {
           pendingPlay = true;
           setPlaying(true);
+          initYouTubePlayer();
         }
       }
     });

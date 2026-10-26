@@ -1213,7 +1213,7 @@
       <!-- Preview Canvas -->
       <div class="preview-canvas">
         <div class="preview-frame-wrap" id="previewWrap">
-          <iframe id="previewIframe" src="/api/embed?q=Arijit%20Singh" allow="autoplay"></iframe>
+          <iframe id="previewIframe" src="/api/embed?q=Arijit%20Singh" allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>
         </div>
       </div>
 
@@ -1225,7 +1225,7 @@
       </div>
 
       <div class="code-box">
-        <pre><code id="snippetCode">&lt;iframe src="http://localhost:3000/api/embed?q=Arijit%20Singh" width="100%" height="110" frameborder="0" allow="autoplay"&gt;&lt;/iframe&gt;</code></pre>
+        <pre><code id="snippetCode">&lt;iframe src="http://localhost:3000/api/embed?q=Arijit%20Singh" width="100%" height="110" frameborder="0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture"&gt;&lt;/iframe&gt;</code></pre>
         <button class="btn-copy-code" onclick="copySnippet()">Copy</button>
       </div>
     </section>
@@ -1568,7 +1568,7 @@
     function updateCodeSnippet() {
       const embedUrl = `${API_BASE}/api/embed?id=${currentSongId}`;
       if (currentSnippetType === 'iframe') {
-        snippetCode.textContent = `<iframe src="${embedUrl}" width="100%" height="110" frameborder="0" allow="autoplay"></iframe>`;
+        snippetCode.textContent = `<iframe src="${embedUrl}" width="100%" height="110" frameborder="0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture"></iframe>`;
       } else if (currentSnippetType === 'curl') {
         snippetCode.textContent = `curl -X GET "${API_BASE}/api/song?id=${currentSongId}" \\\n  -H "Accept: application/json"`;
       } else if (currentSnippetType === 'fetch') {
