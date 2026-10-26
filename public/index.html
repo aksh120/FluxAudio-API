@@ -330,6 +330,59 @@
       cursor: not-allowed;
     }
 
+    /* Source Filter Toggle Group */
+    .source-toggle-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .btn-source {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: var(--radius-pill);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-source:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      border-color: var(--border-hover);
+    }
+
+    .btn-source.active {
+      background: #ffffff;
+      color: #000000;
+      font-weight: 600;
+      border-color: #ffffff;
+    }
+
+    .source-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .btn-source.active .source-dot.saavn {
+      background: #059669;
+    }
+
+    .btn-source.active .source-dot.yt {
+      background: #dc2626;
+    }
+
     /* Preset Chips */
     .preset-chips {
       display: flex;
@@ -493,6 +546,27 @@
       display: flex;
       align-items: center;
       gap: 6px;
+    }
+
+    .pill-source {
+      font-family: var(--font-mono);
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .pill-source.saavn {
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .pill-source.yt {
+      color: #f87171;
+      background: rgba(248, 113, 113, 0.1);
+      border: 1px solid rgba(248, 113, 113, 0.2);
     }
 
     .pill-bitrate {
@@ -1063,6 +1137,20 @@
 
     <!-- Search Section -->
     <section class="search-wrap" id="explorer">
+      <div class="source-toggle-group">
+        <button class="btn-source active" id="srcTabAll" onclick="setSearchSource('all', this)">
+          All Catalogs
+        </button>
+        <button class="btn-source" id="srcTabSaavn" onclick="setSearchSource('saavn', this)">
+          <span class="source-dot saavn"></span>
+          JioSaavn
+        </button>
+        <button class="btn-source" id="srcTabYt" onclick="setSearchSource('youtube', this)">
+          <span class="source-dot yt"></span>
+          YouTube Music
+        </button>
+      </div>
+
       <div class="search-bar">
         <span class="search-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="2">
@@ -1071,7 +1159,7 @@
           </svg>
         </span>
         <input type="text" class="search-input" id="searchInput"
-          placeholder="Search track, artist, album, or paste permalink..." autocomplete="off">
+          placeholder="Search songs, artists, albums across JioSaavn or YouTube Music..." autocomplete="off">
         <span class="search-shortcut">/</span>
         <button class="btn-search" id="btnSearch" onclick="triggerSearch()">
           <span id="searchBtnText">Search</span>
@@ -1157,11 +1245,11 @@
               <span class="method-tag">GET</span>
               <span class="endpoint-title">/api/search</span>
             </div>
-            <p class="api-desc" style="margin-top: 6px;">Query JioSaavn search catalog with pagination &amp; decrypted
-              links.</p>
+            <p class="api-desc" style="margin-top: 6px;">Query JioSaavn &amp; YouTube Music catalogs with source filtering
+              and decrypted links.</p>
           </div>
           <div>
-            <input type="text" class="api-param-input" id="paramSearch" value="q=Starboy&limit=3">
+            <input type="text" class="api-param-input" id="paramSearch" value="q=Starboy&source=all&limit=4">
           </div>
           <div class="api-card-foot">
             <span class="api-timing" id="timeSearch">Ready</span>
@@ -1310,6 +1398,7 @@
     let currentSongId = '3IoDK8qI';
     let currentSongTitle = 'Arijit Singh';
     let currentSnippetType = 'iframe';
+    let currentSearchSource = 'all';
 
     const searchInput = document.getElementById('searchInput');
     const btnSearch = document.getElementById('btnSearch');
@@ -1345,6 +1434,16 @@
       triggerSearch();
     }
 
+    function setSearchSource(src, btn) {
+      currentSearchSource = src;
+      document.querySelectorAll('.btn-source').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const q = searchInput.value.trim();
+      if (q) {
+        triggerSearch();
+      }
+    }
+
     async function triggerSearch() {
       const q = searchInput.value.trim();
       if (!q) return;
@@ -1354,11 +1453,15 @@
       resultsCount.textContent = 'Searching catalog...';
 
       try {
-        const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(q)}&limit=15`);
+        const res = await fetch(`${API_BASE}/api/search?q=${encodeURIComponent(q)}&source=${currentSearchSource}&limit=20`);
         const data = await res.json();
 
         const results = data.results || [];
-        resultsCount.textContent = `Found ${results.length} results for "${q}"`;
+        if (data.counts && (data.counts.saavn || data.counts.youtube)) {
+          resultsCount.textContent = `Found ${results.length} results (${data.counts.saavn || 0} JioSaavn • ${data.counts.youtube || 0} YT Music) for "${q}"`;
+        } else {
+          resultsCount.textContent = `Found ${results.length} results for "${q}"`;
+        }
 
         if (results.length === 0) {
           trackList.innerHTML = `
@@ -1369,8 +1472,18 @@
           return;
         }
 
-        trackList.innerHTML = results.map((song, i) => {
-          const directStream = song.stream_url || song.download_links?.['320kbps'] || '';
+        trackList.innerHTML = results.map((song) => {
+          const isYT = song.source === 'youtube' || (song.id && song.id.startsWith('yt:'));
+          const sourceBadge = isYT
+            ? `<span class="pill-source yt">YT MUSIC</span>`
+            : `<span class="pill-source saavn">SAAVN</span>`;
+          const bitrateBadge = isYT
+            ? `<span class="pill-bitrate">YT AUDIO</span>`
+            : `<span class="pill-bitrate">320K</span>`;
+          const directStream = isYT
+            ? (song.url || song.stream_url)
+            : (song.stream_url || song.download_links?.['320kbps'] || '');
+
           return `
             <div class="track-row">
               <img 
@@ -1383,7 +1496,8 @@
                 <div class="track-title-row">
                   <span class="track-name" title="${esc(song.title)}">${esc(song.title)}</span>
                   <div class="track-badges">
-                    <span class="pill-bitrate">320K</span>
+                    ${sourceBadge}
+                    ${bitrateBadge}
                     ${song.year ? `<span class="pill-bitrate">${song.year}</span>` : ''}
                   </div>
                 </div>
@@ -1400,7 +1514,7 @@
                   Embed
                 </button>
                 <button class="btn-action" onclick="inspectSong('${song.id}')">JSON</button>
-                <a class="btn-action" href="${directStream}" target="_blank" rel="noopener" title="Direct 320kbps Stream">Stream</a>
+                <a class="btn-action" href="${directStream}" target="_blank" rel="noopener" title="${isYT ? 'Open in YouTube Music' : 'Direct 320kbps Stream'}">${isYT ? 'YT Music' : 'Stream'}</a>
               </div>
             </div>
           `;
@@ -1425,7 +1539,7 @@
     function loadInStudio(id, title, shouldScroll = false) {
       currentSongId = id;
       currentSongTitle = title;
-      const url = `${API_BASE}/api/embed?id=${id}`;
+      const url = `${API_BASE}/api/embed?id=${encodeURIComponent(id)}`;
       previewIframe.src = url;
       updateCodeSnippet();
       showToast(`Loaded "${title}" into Autoembed Studio`);
