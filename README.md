@@ -78,10 +78,10 @@ npm test
 | Method | Endpoint | Parameters | Description |
 |---|---|---|---|
 | `GET` | `/api/search` | `q` (required), `source`, `page`, `limit` | Searches tracks across JioSaavn and YouTube Music catalogs |
-| `GET` | `/api/song` | `id` or `url` (required) | Returns song metadata, labels, and stream URLs (supports JioSaavn & YouTube IDs) |
-| `GET` | `/api/album` | `id` (required) | Returns album info and all decrypted album tracks |
-| `GET` | `/api/playlist` | `id` (required) | Returns playlist metadata, fan count, and tracklist |
-| `GET` | `/api/lyrics` | `id` (required) | Returns sanitized plain-text lyrics and preview snippet |
+| `GET` | `/api/song` | `id` or `url` (required), `source` | Returns song metadata, labels, and stream URLs (supports JioSaavn & YouTube IDs) |
+| `GET` | `/api/album` | `id` (required), `source` | Returns album info and tracklist (supports JioSaavn & YouTube album/track IDs) |
+| `GET` | `/api/playlist` | `id` (required), `source` | Returns playlist metadata and tracklist (supports JioSaavn & YouTube VL/PL playlists) |
+| `GET` | `/api/lyrics` | `id` (required), `source` | Returns sanitized plain-text lyrics and preview snippets (JioSaavn & YouTube Music) |
 | `GET` | `/api/embed` | `id` or `q` (required) | Generates responsive HTML5 autoembed audio widget (supports JioSaavn & YouTube) |
 
 ---
@@ -143,7 +143,7 @@ GET /api/search?q={query}&source={source}&page={page}&limit={limit}
       "source": "youtube",
       "title": "Starboy (feat. Daft Punk)",
       "album": "Starboy",
-      "album_id": "",
+      "album_id": "MPREb_FWIMEPTHFsY",
       "artists": "The Weeknd, Daft Punk",
       "featured_artists": "",
       "artist_id": null,
@@ -169,7 +169,7 @@ GET /api/song?url={perma_url}
 ```
 
 **Parameters:**
-- `id` (*string*): Upstream track identifier (e.g. JioSaavn ID `3IoDK8qI` or YouTube ID `yt:4NRXx6U8ABQ`).
+- `id` (*string*): Upstream track identifier (e.g. JioSaavn ID `3IoDK8qI` or YouTube ID `yt:3_g2un5M350`).
 - `url` (*string*): Alternatively, a full JioSaavn or YouTube permalink URL.
 
 ---
@@ -180,7 +180,7 @@ GET /api/album?id={album_id}
 ```
 
 **Parameters:**
-- `id` (*string*, required): Upstream album identifier (e.g. `25500145`).
+- `id` (*string*, required): Upstream album identifier (e.g. JioSaavn album ID `25500145` or YouTube Music album ID `yt:MPREb_FWIMEPTHFsY`). Also supports auto-resolving album metadata directly from YouTube track IDs (e.g. `yt:Yegn0dZ-BfY`).
 
 ---
 
@@ -190,7 +190,7 @@ GET /api/playlist?id={playlist_id}
 ```
 
 **Parameters:**
-- `id` (*string*, required): Upstream playlist identifier (e.g. `110858205`).
+- `id` (*string*, required): Upstream playlist identifier (e.g. JioSaavn playlist ID `110858205` or YouTube Music playlist ID `yt:VLPLplXQ2cg9B_qrCVd1J_iId5SvP8Kf_BfS`).
 
 ---
 
@@ -200,15 +200,17 @@ GET /api/lyrics?id={song_id}
 ```
 
 **Parameters:**
-- `id` (*string*, required): Upstream song identifier.
+- `id` (*string*, required): Upstream track identifier (e.g. JioSaavn ID `aRZbUYD7` or YouTube track ID `yt:3_g2un5M350` / `yt:Yegn0dZ-BfY`).
 
 **Example Response:**
 ```json
 {
   "status": "ok",
-  "song_id": "3IoDK8qI",
-  "lyrics": "I'm in love with the shape of you\nWe push and pull like a magnet do...",
-  "snippet": "I'm in love with the shape of you / We push and pull like a magnet do"
+  "song_id": "yt:3_g2un5M350",
+  "source": "youtube",
+  "lyrics": "I'm tryna put you in the worst mood, ah\nP1 cleaner than your church shoes, ah...",
+  "snippet": "I'm tryna put you in the worst mood, ah / P1 cleaner than your church shoes, ah",
+  "source_attribution": "YouTube Music"
 }
 ```
 
