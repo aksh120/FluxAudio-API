@@ -1734,7 +1734,7 @@
             ? `<span class="pill-bitrate">YT AUDIO</span>`
             : `<span class="pill-bitrate">320K</span>`;
           const directStream = isYT
-            ? (song.url || song.stream_url)
+            ? (song.stream_url || `/api/stream?id=${encodeURIComponent(song.id)}`)
             : (song.stream_url || song.download_links?.['320kbps'] || '');
 
           return `
@@ -1764,10 +1764,10 @@
                 <span class="pill-duration">${fmtDuration(song.duration)}</span>
                 <button class="btn-action highlight" onclick="loadInStudio('${song.id}', '${esc(song.title)}', true)">
                   <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                  Embed
+                  Play
                 </button>
                 <button class="btn-action" onclick="inspectSong('${song.id}')">JSON</button>
-                <a class="btn-action" href="${directStream}" target="_blank" rel="noopener" title="${isYT ? 'Open in YouTube Music' : 'Direct 320kbps Stream'}">${isYT ? 'YT Music' : 'Stream'}</a>
+                <a class="btn-action" href="${directStream}" target="_blank" rel="noopener" title="${isYT ? 'Stream YouTube Track' : 'Direct 320kbps Stream'}">Stream</a>
               </div>
             </div>
           `;
@@ -1792,7 +1792,7 @@
     function loadInStudio(id, title, shouldScroll = false) {
       currentSongId = id;
       currentSongTitle = title;
-      const url = `${API_BASE}/api/embed?id=${encodeURIComponent(id)}`;
+      const url = `${API_BASE}/api/embed?id=${encodeURIComponent(id)}${shouldScroll ? '&autoplay=true' : ''}`;
       previewIframe.src = url;
       updateCodeSnippet();
       showToast(`Loaded "${title}" into Autoembed Studio`);

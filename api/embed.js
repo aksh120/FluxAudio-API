@@ -20,7 +20,8 @@ export default async function handler(req, res) {
   if (handleCORS(req, res)) return;
 
   try {
-    const { id, q, source } = req.query || {};
+    const { id, q, source, autoplay } = req.query || {};
+    const autoPlayBool = autoplay === "true" || autoplay === "1";
 
     if (!id && !q) {
       return sendHTML(res, 400, renderErrorWidget("Missing Parameter", "Pass ?id= or ?q= to stream audio."));
@@ -84,7 +85,7 @@ export default async function handler(req, res) {
       }
     }
 
-    const html = buildMinimalPlayerHTML(song);
+    const html = buildMinimalPlayerHTML(song, autoPlayBool);
     return sendHTML(res, 200, html);
   } catch (err) {
     console.error("[/api/embed]", err);
@@ -139,7 +140,7 @@ function renderErrorWidget(title, subtitle) {
 </html>`;
 }
 
-function buildMinimalPlayerHTML(song) {
+function buildMinimalPlayerHTML(song, autoPlayBool = false) {
   const isYouTube = song.source === "youtube" || !!song.youtube_id;
   const ytVideoId = song.youtube_id || (song.id ? song.id.replace(/^yt:/, "") : "");
   const streamUrl = song.stream_url || "";
@@ -189,7 +190,9 @@ function buildMinimalPlayerHTML(song) {
     max-width: 620px;
     height: 100%;
     max-height: 98px;
-    background: #0d0f17;
+    background: rgba(13, 15, 23, 0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px;
     padding: 10px 14px;
@@ -197,12 +200,33 @@ function buildMinimalPlayerHTML(song) {
     align-items: center;
     gap: 14px;
     position: relative;
+    z-index: 10;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
     transition: border-color 0.15s ease;
   }
 
   .player-card:hover {
     border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  #ytPlayerContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    overflow: hidden;
+    opacity: 0.65;
+  }
+
+  #ytPlayerContainer iframe {
+    width: 100% !important;
+    height: 100% !important;
+    filter: blur(48px) brightness(0.24);
+    transform: scale(1.25);
+    pointer-events: none;
   }
 
   /* Artwork */
@@ -624,7 +648,7 @@ function buildMinimalPlayerHTML(song) {
 </div>
 
 ${isYouTube ? `
-<div id="ytPlayerContainer" style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;opacity:0.001;pointer-events:none;overflow:hidden;">
+<div id="ytPlayerContainer">
   <div id="ytPlayerHost"></div>
 </div>
 ` : `
@@ -687,8 +711,9 @@ ${isYouTube ? `
           height: '100%',
           width: '100%',
           videoId: '${escHTML(ytVideoId)}',
+          host: 'https://www.youtube-nocookie.com',
           playerVars: {
-            autoplay: 0,
+            autoplay: ${autoPlayBool ? '1' : '0'},
             controls: 0,
             disablekb: 1,
             fs: 0,
@@ -696,7 +721,7 @@ ${isYouTube ? `
             rel: 0,
             playsinline: 1,
             enablejsapi: 1,
-            origin: window.location.origin
+            iv_load_policy: 3
           },
           events: {
             onReady: function() {
@@ -706,7 +731,7 @@ ${isYouTube ? `
                 const d = ytPlayer.getDuration() || totalDurationSec;
                 if (d) timeTotal.textContent = fmt(d);
               } catch (err) {}
-              if (pendingPlay) {
+              if (pendingPlay || ${autoPlayBool ? 'true' : 'false'}) {
                 pendingPlay = false;
                 startYouTubePlayback();
               }
@@ -728,15 +753,11 @@ ${isYouTube ? `
                 timeCurrent.textContent = '0:00';
               }
             },
-            onError: function() {
+            onError: function(e) {
+              console.warn('[YouTube Player] Notice:', e?.data);
               ytPlaying = false;
               setPlaying(false);
               stopPoll();
-              const tag = document.querySelector('.quality-tag');
-              if (tag) {
-                tag.textContent = 'UNPLAYABLE';
-                tag.style.color = '#ef4444';
-              }
             }
           }
         });
@@ -746,7 +767,10 @@ ${isYouTube ? `
     }
 
     function startYouTubePlayback() {
-      if (!ytPlayer || !ytReady) return;
+      if (!ytPlayer || !ytReady) {
+        pendingPlay = true;
+        return;
+      }
       try {
         if (typeof ytPlayer.unMute === 'function') ytPlayer.unMute();
         ytPlayer.playVideo();
@@ -764,18 +788,10 @@ ${isYouTube ? `
 
     if (window.YT && window.YT.Player) {
       initYouTubePlayer();
-    } else if (window.YT && window.YT.ready) {
-      window.YT.ready(initYouTubePlayer);
     } else {
       const tag = document.createElement('script');
-      tag.id = 'ytIframeApiScript';
       tag.src = 'https://www.youtube.com/iframe_api';
-      const first = document.getElementsByTagName('script')[0];
-      if (first && first.parentNode) {
-        first.parentNode.insertBefore(tag, first);
-      } else {
-        document.head.appendChild(tag);
-      }
+      document.head.appendChild(tag);
     }
 
     function startPoll() {

@@ -47,21 +47,57 @@ export default async function handler(req, res) {
       const streams = await getYouTubeAudioStreams(cleanId);
       downloadLinks = streams.download_links || {};
 
-      if (quality && downloadLinks[quality]) {
+      if (quality && downloadLinks[quality] && typeof downloadLinks[quality] === "string" && downloadLinks[quality].startsWith("http")) {
         streamUrl = downloadLinks[quality];
       } else {
-        streamUrl =
-          downloadLinks["128kbps"] ||
+        const candidate =
           downloadLinks["160kbps"] ||
+          downloadLinks["128kbps"] ||
           streams.stream_url ||
           downloadLinks["96kbps"] ||
           downloadLinks["48kbps"] ||
           "";
+
+        // Only treat candidate as direct raw stream if it is an actual external http URL
+        if (candidate && candidate.startsWith("http") && !candidate.includes("/api/stream")) {
+          streamUrl = candidate;
+        }
       }
 
-      // If stream_url was pointing back to /api/stream, avoid self-loop
-      if (streamUrl && streamUrl.startsWith("/api/stream")) {
-        streamUrl = "";
+      // If raw googlevideo stream is blocked on cloud serverless datacenter IPs:
+      if (!streamUrl) {
+        const isJsonMode =
+          json === "true" ||
+          json === "1" ||
+          (req.headers.accept &&
+            req.headers.accept.includes("application/json") &&
+            !req.headers.accept.includes("text/html"));
+
+        if (isJsonMode) {
+          return sendJSON(res, 200, {
+            status: "ok",
+            id: `yt:${cleanId}`,
+            source: "youtube",
+            playback_type: "embed_player",
+            stream_url: `/api/embed?id=yt:${cleanId}`,
+            embed_url: `/api/embed?id=yt:${cleanId}`,
+            youtube_url: `https://music.youtube.com/watch?v=${cleanId}`,
+            download_links: {
+              stream: `/api/embed?id=yt:${cleanId}`,
+              embed: `/api/embed?id=yt:${cleanId}`,
+              music_youtube: `https://music.youtube.com/watch?v=${cleanId}`,
+              youtube: `https://www.youtube.com/watch?v=${cleanId}`,
+            },
+            note: "Serverless cloud IP restriction prevented direct googlevideo extraction. Playable via HTML5 embed player widget.",
+          });
+        }
+
+        // Web browsers and media clients: redirect directly to auto-playing HTML5 embed player
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+        res.setHeader("Cache-Control", "public, max-age=1800, s-maxage=3600");
+        res.writeHead(302, { Location: `/api/embed?id=yt:${cleanId}&autoplay=true` });
+        return res.end();
       }
     } else {
       // JioSaavn stream resolution
