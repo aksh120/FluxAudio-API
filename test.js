@@ -16,6 +16,9 @@ import {
   parseDurationToSeconds,
   upscaleYouTubeImage,
   formatYouTubeSong,
+  getYouTubeLyrics,
+  getYouTubeAlbum,
+  getYouTubePlaylist,
 } from "./lib/ytmusic.js";
 
 let passed = 0;
@@ -179,6 +182,14 @@ assert("formatYouTubeSong", "extracts artist", formattedYT.artists === "The Week
 assert("formatYouTubeSong", "extracts album", formattedYT.album === "After Hours");
 assert("formatYouTubeSong", "computes duration in seconds", formattedYT.duration === 200);
 assert("formatYouTubeSong", "generates music youtube URL", formattedYT.url === "https://music.youtube.com/watch?v=4NRXx6U8ABQ");
+
+// ── YouTube Music Extended Module Export Checks ─────────────────────
+assert("getYouTubeLyrics", "function is defined", typeof getYouTubeLyrics === "function");
+assert("getYouTubeAlbum", "function is defined", typeof getYouTubeAlbum === "function");
+assert("getYouTubePlaylist", "function is defined", typeof getYouTubePlaylist === "function");
+assert("getYouTubeLyrics", "handles null/empty gracefully", await getYouTubeLyrics(null) === null);
+assert("getYouTubeAlbum", "handles null/empty gracefully", await getYouTubeAlbum(null) === null);
+assert("getYouTubePlaylist", "handles null/empty gracefully", await getYouTubePlaylist(null) === null);
 
 console.log(`\nTest Suites: 1 passed, 1 total`);
 console.log(`Tests:       ${passed} passed, ${failed} failed`);
