@@ -19,6 +19,7 @@ import {
   getYouTubeLyrics,
   getYouTubeAlbum,
   getYouTubePlaylist,
+  getYouTubeAudioStreams,
 } from "./lib/ytmusic.js";
 
 let passed = 0;
@@ -190,6 +191,8 @@ assert("getYouTubePlaylist", "function is defined", typeof getYouTubePlaylist ==
 assert("getYouTubeLyrics", "handles null/empty gracefully", await getYouTubeLyrics(null) === null);
 assert("getYouTubeAlbum", "handles null/empty gracefully", await getYouTubeAlbum(null) === null);
 assert("getYouTubePlaylist", "handles null/empty gracefully", await getYouTubePlaylist(null) === null);
+assert("getYouTubeAudioStreams", "function is defined", typeof getYouTubeAudioStreams === "function");
+assert("getYouTubeAudioStreams", "handles null/empty gracefully", (await getYouTubeAudioStreams(null)).stream_url === "");
 
 console.log(`\nTest Suites: 1 passed, 1 total`);
 console.log(`Tests:       ${passed} passed, ${failed} failed`);

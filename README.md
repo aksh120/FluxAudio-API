@@ -79,6 +79,7 @@ npm test
 |---|---|---|---|
 | `GET` | `/api/search` | `q` (required), `source`, `page`, `limit` | Searches tracks across JioSaavn and YouTube Music catalogs |
 | `GET` | `/api/song` | `id` or `url` (required), `source` | Returns song metadata, labels, and stream URLs (supports JioSaavn & YouTube IDs) |
+| `GET` | `/api/stream` | `id` (required), `quality`, `json` | Universal audio streaming endpoint with 302 redirect to direct media playback |
 | `GET` | `/api/album` | `id` (required), `source` | Returns album info and tracklist (supports JioSaavn & YouTube album/track IDs) |
 | `GET` | `/api/playlist` | `id` (required), `source` | Returns playlist metadata and tracklist (supports JioSaavn & YouTube VL/PL playlists) |
 | `GET` | `/api/lyrics` | `id` (required), `source` | Returns sanitized plain-text lyrics and preview snippets (JioSaavn & YouTube Music) |
@@ -174,7 +175,26 @@ GET /api/song?url={perma_url}
 
 ---
 
-#### 3. Get Album Details
+#### 3. Direct Audio Stream (Native Playback)
+```http
+GET /api/stream?id={song_id}&quality={quality}&json={json}
+```
+
+Provides a direct, unthrottled audio stream endpoint designed for HTML5 `<audio>` tags, mobile players, and downloads. Supports both JioSaavn decrypted streams and YouTube direct Google Video audio formats.
+
+**Parameters:**
+- `id` (*string*, required): Song identifier (e.g. `3IoDK8qI` or `yt:xTvyyoF_LZY`).
+- `quality` (*string*, optional): Desired bitrate (`320kbps`, `160kbps`, `128kbps`, `96kbps`, `48kbps`). Defaults to highest available audio stream.
+- `json` (*boolean*, optional): Set to `true` to return JSON with stream URLs instead of a `302 Found` redirect.
+
+**Native Audio Usage:**
+```html
+<audio controls src="https://your-domain.vercel.app/api/stream?id=yt:xTvyyoF_LZY"></audio>
+```
+
+---
+
+#### 4. Get Album Details
 ```http
 GET /api/album?id={album_id}
 ```
@@ -184,7 +204,7 @@ GET /api/album?id={album_id}
 
 ---
 
-#### 4. Get Playlist Details
+#### 5. Get Playlist Details
 ```http
 GET /api/playlist?id={playlist_id}
 ```
@@ -194,7 +214,7 @@ GET /api/playlist?id={playlist_id}
 
 ---
 
-#### 5. Get Lyrics
+#### 6. Get Lyrics
 ```http
 GET /api/lyrics?id={song_id}
 ```
@@ -216,7 +236,7 @@ GET /api/lyrics?id={song_id}
 
 ---
 
-#### 6. Autoembed Player Widget
+#### 7. Autoembed Player Widget
 ```http
 GET /api/embed?id={song_id}
 GET /api/embed?q={search_query}
