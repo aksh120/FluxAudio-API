@@ -9,7 +9,7 @@
  */
 
 import { fetchFromSaavn, formatSong, sendJSON, handleCORS } from "../lib/saavn.js";
-import { getYouTubeAudioStreams } from "../lib/ytmusic.js";
+import { getYouTubeAudioStreams, getYouTubeSongDetails } from "../lib/ytmusic.js";
 
 export default async function handler(req, res) {
   if (handleCORS(req, res)) return;
@@ -44,10 +44,11 @@ export default async function handler(req, res) {
         }
       }
 
+      // Step 1: Attempt direct googlevideo extraction (succeeds locally or with YOUTUBE_PROXY)
       const streams = await getYouTubeAudioStreams(cleanId);
       downloadLinks = streams.download_links || {};
 
-      if (quality && downloadLinks[quality] && typeof downloadLinks[quality] === "string" && downloadLinks[quality].startsWith("http")) {
+      if (quality && downloadLinks[quality] && typeof downloadLinks[quality] === "string" && downloadLinks[quality].startsWith("http") && !downloadLinks[quality].includes("/api/")) {
         streamUrl = downloadLinks[quality];
       } else {
         const candidate =
@@ -59,45 +60,46 @@ export default async function handler(req, res) {
           "";
 
         // Only treat candidate as direct raw stream if it is an actual external http URL
-        if (candidate && candidate.startsWith("http") && !candidate.includes("/api/stream")) {
+        if (candidate && candidate.startsWith("http") && !candidate.includes("/api/")) {
           streamUrl = candidate;
         }
       }
 
-      // If raw googlevideo stream is blocked on cloud serverless datacenter IPs:
+      // Step 2: If direct googlevideo extraction is blocked on cloud serverless (Vercel datacenter IPs),
+      // seamlessly resolve the high-fidelity 320kbps CDN stream via song metadata!
       if (!streamUrl) {
-        const isJsonMode =
-          json === "true" ||
-          json === "1" ||
-          (req.headers.accept &&
-            req.headers.accept.includes("application/json") &&
-            !req.headers.accept.includes("text/html"));
+        try {
+          const ytSong = await getYouTubeSongDetails(cleanId);
+          if (ytSong && ytSong.title) {
+            const cleanTitle = ytSong.title
+              .replace(/\b(official|video|audio|lyrics|music|hd|4k|remix|feat\.?|ft\.?)\b/gi, "")
+              .replace(/[\[\(].*?[\]\)]/g, "")
+              .trim();
+            const cleanArtist = (ytSong.artists || "").split(",")[0].trim();
+            const query = `${cleanTitle} ${cleanArtist}`.trim();
 
-        if (isJsonMode) {
-          return sendJSON(res, 200, {
-            status: "ok",
-            id: `yt:${cleanId}`,
-            source: "youtube",
-            playback_type: "embed_player",
-            stream_url: `/api/embed?id=yt:${cleanId}`,
-            embed_url: `/api/embed?id=yt:${cleanId}`,
-            youtube_url: `https://music.youtube.com/watch?v=${cleanId}`,
-            download_links: {
-              stream: `/api/embed?id=yt:${cleanId}`,
-              embed: `/api/embed?id=yt:${cleanId}`,
-              music_youtube: `https://music.youtube.com/watch?v=${cleanId}`,
-              youtube: `https://www.youtube.com/watch?v=${cleanId}`,
-            },
-            note: "Serverless cloud IP restriction prevented direct googlevideo extraction. Playable via HTML5 embed player widget.",
-          });
+            const saavnData = await fetchFromSaavn({
+              __call: "search.getResults",
+              _format: "json",
+              q: query,
+              p: "1",
+              n: "3",
+            });
+
+            const saavnResults = saavnData.results || saavnData.songs?.data || [];
+            if (saavnResults.length > 0) {
+              const matched = formatSong(saavnResults[0]);
+              downloadLinks = matched.download_links || {};
+              if (quality && downloadLinks[quality]) {
+                streamUrl = downloadLinks[quality];
+              } else {
+                streamUrl = matched.stream_url || downloadLinks["320kbps"] || downloadLinks["160kbps"] || "";
+              }
+            }
+          }
+        } catch (matchErr) {
+          console.warn("[/api/stream] Cross-catalog audio matching fallback error:", matchErr.message);
         }
-
-        // Web browsers and media clients: redirect directly to auto-playing HTML5 embed player
-        res.setHeader("Access-Control-Allow-Origin", "*");
-        res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-        res.setHeader("Cache-Control", "public, max-age=1800, s-maxage=3600");
-        res.writeHead(302, { Location: `/api/embed?id=yt:${cleanId}&autoplay=true` });
-        return res.end();
       }
     } else {
       // JioSaavn stream resolution
